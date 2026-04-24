@@ -90,7 +90,7 @@ open terminal in which folder you save all the files of project<br>
 ---
 
 # 🛠️ Tech Stack
-Programming Language: C / C++ / Python (update accordingly)<br>
+Programming Language: HTML, CSS, JS<br>
 ## Concepts Used:<br>
 Finite Automata<br>
 Context-Free Grammar<br>
