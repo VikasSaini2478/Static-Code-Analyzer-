@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>C Analyzer — Static Compiler Pipeline</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="main.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- ── Header ── -->
+  <header id="header">
+    <div class="header-brand">
+      <div class="logo-mark">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+          <rect width="22" height="22" rx="6" fill="#f0883e"/>
+          <path d="M6 7l4 4-4 4M12 15h4" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <span class="brand-name">C Analyzer</span>
+      <span class="brand-version">v3.0</span>
+    </div>
+
+    <div class="header-divider"></div>
+
+    <div class="input-mode-bar">
+      <button class="mode-btn active" id="mode-editor" onclick="setInputMode('editor')" title="Write or paste code directly">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8h6M5 5.5h4M5 10.5h3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+        Editor
+      </button>
+      <button class="mode-btn" id="mode-upload" onclick="setInputMode('upload')" title="Upload a .c source file">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 10V3M8 3L5.5 5.5M8 3l2.5 2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 11v1a1 1 0 001 1h8a1 1 0 001-1v-1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        Upload
+      </button>
+      <button class="mode-btn" id="mode-paste" onclick="setInputMode('paste')" title="Paste source code">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="4" y="3" width="8" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M6 3V2.5A.5.5 0 016.5 2h3a.5.5 0 01.5.5V3" stroke="currentColor" stroke-width="1.3"/><path d="M6 7h4M6 9.5h3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        Paste
+      </button>
+    </div>
+
+    <div class="header-divider"></div>
+
+    <div id="sample-bar">
+      <span class="sample-label">Samples:</span>
+    </div>
+
+    <div class="header-right">
+      <div id="file-indicator" class="file-indicator hidden">
+        <svg width="12" height="12" viewBox="0 0 16 16" fill="none"><path d="M9 2H4a1 1 0 00-1 1v10a1 1 0 001 1h8a1 1 0 001-1V6L9 2z" stroke="#3fb950" stroke-width="1.5"/><path d="M9 2v4h4" stroke="#3fb950" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <span id="file-name">no file</span>
+        <button class="clear-file" onclick="clearFile()" title="Remove file">×</button>
+      </div>
+      <button id="run-btn" title="Ctrl+Enter">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg>
+        Run
+      </button>
+    </div>
+  </header>
+
+  <!-- ── Upload Drop Zone ── -->
+  <div id="upload-zone" class="upload-zone hidden">
+    <input type="file" id="file-input" accept=".c,.h,.cpp,.cc,.cxx,.txt" style="display:none" />
+    <div class="upload-drop-area" id="drop-area">
+      <div class="upload-icon">
+        <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+          <rect width="52" height="52" rx="14" fill="rgba(240,136,62,0.08)" stroke="rgba(240,136,62,0.2)" stroke-width="1.5"/>
+          <path d="M26 33V19M26 19l-7 7M26 19l7 7" stroke="#f0883e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M14 37v2a2 2 0 002 2h20a2 2 0 002-2v-2" stroke="#f0883e" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="upload-title">Drop your source file here</div>
+      <div class="upload-sub">Drag and drop or click anywhere to browse</div>
+      <div class="upload-formats">
+        <span class="fmt-badge">.c</span>
+        <span class="fmt-badge">.h</span>
+        <span class="fmt-badge">.cpp</span>
+        <span class="fmt-badge">.cc</span>
+        <span class="fmt-badge">.txt</span>
+      </div>
+      <button class="upload-browse-btn" onclick="document.getElementById('file-input').click()">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 10V13a1 1 0 001 1h10a1 1 0 001-1v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8 2v8M5 5l3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Choose File
+      </button>
+      <div class="upload-hint">Max file size: 1 MB</div>
+    </div>
+  </div>
+
+  <!-- ── Paste Modal ── -->
+  <div id="paste-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="4" y="3" width="8" height="11" rx="1.5" stroke="#f0883e" stroke-width="1.5"/><path d="M6 3V2.5A.5.5 0 016.5 2h3a.5.5 0 01.5.5V3" stroke="#f0883e" stroke-width="1.3"/></svg>
+          Paste Source Code
+        </div>
+        <button class="modal-close" onclick="closePasteModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-editor-wrap">
+          <div id="modal-line-numbers" class="modal-line-numbers">1</div>
+          <textarea
+            id="paste-editor"
+            class="modal-editor"
+            spellcheck="false"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            placeholder="// Paste your C source code here…&#10;// Press Ctrl+Enter to apply and run"
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <span id="paste-char-count" class="modal-char-count">0 chars</span>
+        <div class="modal-footer-actions">
+          <button class="modal-cancel-btn" onclick="closePasteModal()">Cancel</button>
+          <button class="modal-clear-btn"  onclick="clearPasteEditor()">Clear</button>
+          <button class="modal-apply-btn"  onclick="applyPastedCode()">
+            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M3 2l7 4-7 4V2z" fill="currentColor"/></svg>
+            Apply &amp; Run
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Main Split ── -->
+  <main id="main">
+
+    <!-- Left: Source Editor -->
+    <div class="panel">
+      <div class="panel-header">
+        Source
+        <span class="sub" id="char-count">0 chars · 1 line</span>
+      </div>
+      <div id="editor-wrap">
+        <div id="line-numbers"></div>
+        <textarea
+          id="source-editor"
+          spellcheck="false"
+          autocomplete="off"
+          autocorrect="off"
+          autocapitalize="off"
+          placeholder="// Write or paste C source code here&#10;// Use Upload or Paste buttons in the toolbar&#10;// Ctrl+Enter to run"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- Resize handle -->
+    <div id="resize-handle"></div>
+
+    <!-- Right: Analysis Output -->
+    <div class="panel">
+      <div class="panel-header">Output</div>
+
+      <div class="phase-tabs">
+        <div class="phase-tab active">Tokens<span class="tab-count">—</span></div>
+        <div class="phase-tab">AST<span class="tab-count">—</span></div>
+        <div class="phase-tab">Errors<span class="tab-count">0</span></div>
+        <div class="phase-tab">Warnings<span class="tab-count">0</span></div>
+        <div class="phase-tab">Symbols<span class="tab-count">—</span></div>
+        <div class="phase-tab">Stats<span class="tab-count">—</span></div>
+      </div>
+
+      <!-- Tokens tab -->
+      <div class="tab-pane active">
+        <div class="output-scroll">
+          <div id="token-stats"></div>
+          <div id="token-stream"></div>
+        </div>
+      </div>
+
+      <!-- AST tab -->
+      <div class="tab-pane">
+        <div class="output-scroll"><div id="ast-tree"></div></div>
+      </div>
+
+      <!-- Errors tab -->
+      <div class="tab-pane">
+        <div class="output-scroll">
+          <div id="error-summary"></div>
+          <div id="error-list"></div>
+        </div>
+      </div>
+
+      <!-- Warnings tab -->
+      <div class="tab-pane">
+        <div class="output-scroll"><div id="warning-list"></div></div>
+      </div>
+
+      <!-- Symbols tab -->
+      <div class="tab-pane">
+        <div class="output-scroll"><div id="symbol-table"></div></div>
+      </div>
+
+      <!-- Stats tab -->
+      <div class="tab-pane">
+        <div class="output-scroll">
+          <div class="stats-section-title">Summary</div>
+          <div class="stats-grid" id="stats-grid"></div>
+          <div class="stats-section-title" style="margin-top:18px">Token Breakdown</div>
+          <div class="tok-breakdown" id="tok-breakdown"></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── Status Bar ── -->
+  <div id="status-bar">
+    <div class="status-item">
+      <div class="status-dot"></div>
+      <span>Ready</span>
+    </div>
+    <div class="status-item">
+      <span id="status-input-mode" style="color:var(--faint)">Editor mode</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- Module entry -->
+<script type="module" src="main.js"></script>
+
+<!-- Non-module: file/upload/paste handling -->
+<script>
+/* ── Input mode switching ── */
+function setInputMode(mode) {
+  const uploadZone = document.getElementById('upload-zone');
+  const mainEl     = document.getElementById('main');
+  const modeBtns   = document.querySelectorAll('.mode-btn');
+  const statusMode = document.getElementById('status-input-mode');
+  modeBtns.forEach(b => b.classList.remove('active'));
+
+  if (mode === 'upload') {
+    document.getElementById('mode-upload').classList.add('active');
+    uploadZone.classList.remove('hidden');
+    mainEl.classList.add('hidden');
+    statusMode && (statusMode.textContent = 'Upload mode');
+  } else if (mode === 'paste') {
+    document.getElementById('mode-editor').classList.add('active');
+    uploadZone.classList.add('hidden');
+    mainEl.classList.remove('hidden');
+    openPasteModal();
+    statusMode && (statusMode.textContent = 'Paste mode');
+  } else {
+    document.getElementById('mode-editor').classList.add('active');
+    uploadZone.classList.add('hidden');
+    mainEl.classList.remove('hidden');
+    statusMode && (statusMode.textContent = 'Editor mode');
+  }
+}
+
+/* ── Paste modal ── */
+function openPasteModal() {
+  const m = document.getElementById('paste-modal');
+  m.classList.remove('hidden');
+  requestAnimationFrame(() => m.classList.add('visible'));
+  setTimeout(() => document.getElementById('paste-editor').focus(), 50);
+  updateModalLineNumbers();
+}
+
+function closePasteModal() {
+  const m = document.getElementById('paste-modal');
+  m.classList.remove('visible');
+  setTimeout(() => m.classList.add('hidden'), 220);
+}
+
+function clearPasteEditor() {
+  const pe = document.getElementById('paste-editor');
+  pe.value = '';
+  document.getElementById('paste-char-count').textContent = '0 chars';
+  updateModalLineNumbers();
+  pe.focus();
+}
+
+function applyPastedCode() {
+  const code = document.getElementById('paste-editor').value;
+  if (!code.trim()) { closePasteModal(); return; }
+  const editor = document.getElementById('source-editor');
+  editor.value = code;
+  editor.dispatchEvent(new Event('input'));
+  closePasteModal();
+  setTimeout(() => { if (window._runAnalysis) window._runAnalysis(); }, 120);
+}
+
+function updateModalLineNumbers() {
+  const ta = document.getElementById('paste-editor');
+  const ln = document.getElementById('modal-line-numbers');
+  if (!ta || !ln) return;
+  const n = ta.value.split('\n').length;
+  ln.textContent = Array.from({length: n}, (_, i) => i + 1).join('\n');
+}
+
+/* ── File loading ── */
+function loadFile(file) {
+  if (file.size > 1024 * 1024) { alert('File exceeds 1 MB limit.'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const editor = document.getElementById('source-editor');
+    editor.value = e.target.result;
+    editor.dispatchEvent(new Event('input'));
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-indicator').classList.remove('hidden');
+    setInputMode('editor');
+    setTimeout(() => { if (window._runAnalysis) window._runAnalysis(); }, 120);
+  };
+  reader.readAsText(file);
+}
+
+function clearFile() {
+  document.getElementById('file-indicator').classList.add('hidden');
+  document.getElementById('file-input').value = '';
+  const editor = document.getElementById('source-editor');
+  editor.value = '';
+  editor.dispatchEvent(new Event('input'));
+}
+
+/* ── Bootstrap ── */
+document.addEventListener('DOMContentLoaded', () => {
+  /* Paste editor events */
+  const pe = document.getElementById('paste-editor');
+  if (pe) {
+    pe.addEventListener('input', () => {
+      const n = pe.value.length;
+      document.getElementById('paste-char-count').textContent = `${n} char${n!==1?'s':''}`;
+      updateModalLineNumbers();
+    });
+    pe.addEventListener('scroll', () => {
+      document.getElementById('modal-line-numbers').scrollTop = pe.scrollTop;
+    });
+    pe.addEventListener('keydown', e => {
+      if ((e.ctrlKey||e.metaKey) && e.key==='Enter') { e.preventDefault(); applyPastedCode(); }
+      if (e.key==='Escape') closePasteModal();
+    });
+  }
+
+  /* File input */
+  const fileInput = document.getElementById('file-input');
+  if (fileInput) fileInput.addEventListener('change', e => { if (e.target.files[0]) loadFile(e.target.files[0]); });
+
+  /* Drag & drop */
+  const dropArea = document.getElementById('drop-area');
+  if (dropArea) {
+    ['dragenter','dragover'].forEach(ev => dropArea.addEventListener(ev, e => { e.preventDefault(); dropArea.classList.add('drag-over'); }));
+    ['dragleave','drop'].forEach(ev => dropArea.addEventListener(ev, e => { e.preventDefault(); dropArea.classList.remove('drag-over'); }));
+    dropArea.addEventListener('drop', e => { if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]); });
+    dropArea.addEventListener('click', e => {
+      if (e.target === dropArea || ['path','rect','svg','div'].includes(e.target.tagName.toLowerCase()))
+        document.getElementById('file-input').click();
+    });
+  }
+
+  /* Close modal by clicking backdrop */
+  document.getElementById('paste-modal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('paste-modal')) closePasteModal();
+  });
+});
+</script>
+</body>
+</html>
