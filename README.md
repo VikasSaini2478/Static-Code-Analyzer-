@@ -100,7 +100,6 @@ Symbol Table Management<br>
 ---
 
 # 📈 Future Improvements<br>
-Add Semantic Analysis<br>
 Implement Code Optimization<br>
 Build a GUI Interface<br>
 Extend support for full programming language syntax<br>
@@ -134,8 +133,6 @@ primary     → literal | identifier | "(" expr ")" | "[" … "]"
 ```
 ---
 
-## ⭐ If you like this project
 
-Give it a star ⭐ and share it!
 
 ---
